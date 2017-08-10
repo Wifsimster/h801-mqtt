@@ -17,20 +17,32 @@ function readBrightness(pin)
     return print('brightness:' .. pwm.getduty(pin))
 end
 
+function setRed(val)
+    pwm.setduty(RED, val)
+end
+
+function setGreen(val)
+    pwm.setduty(GREEN, val)
+end
+
+function setBlue(val)
+    pwm.setduty(BLUE, val)
+end
+
 -- Flash the led on MQTT activity
 function mqtt_activity()
-    if (gpio.read(LED) == 1) then 
-        gpio.write(LED, gpio.HIGH)
+    if (gpio.read(LED_GREEN) == 1) then 
+        gpio.write(LED_GREEN, gpio.HIGH)
     end
-    gpio.write(LED, gpio.LOW)
+    gpio.write(LED_GREEN, gpio.LOW)
     tmr.alarm(5, 50, 0, function()
-        gpio.write(LED, gpio.HIGH)
+        gpio.write(LED_GREEN, gpio.HIGH)
     end)
 end
 
 function mqtt_state()
     TOPIC = '/data/'
-    DATA = '{"mac":"'..mac..'","state":"'..gpio.read(RELAY)..'"}'
+    DATA = '{"mac":"'..mac..'","state":"'.."ON"..'"}'
     m:publish(TOPIC, DATA, 0, 0, function(conn)
         print(TOPIC.." : "..CLIENT_ID.." - "..DATA)
     end)

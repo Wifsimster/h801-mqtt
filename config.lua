@@ -16,5 +16,5 @@ GREEN = 7       -- GPIO 13
 BLUE = 6        -- GPIO 12
 W1 = 5          -- GPIO 14
 W2 = 2          -- GPIO 4
-LED_RED = 1     -- GPIO 5
-LED_GREEN = 10  -- GPIO 1
+LED_RED = 1     -- GPIO 5 / Power
+LED_GREEN = 10  -- GPIO 1 / Signal

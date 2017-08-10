@@ -1,11 +1,14 @@
 require('config')
 require('functions')
 
-gpio.mode(RELAY, gpio.OUTPUT)
-gpio.write(RELAY, gpio.LOW)
-gpio.mode(BTN, gpio.INPUT, gpio.PULLUP)
-gpio.mode(LED, gpio.OUTPUT)
-gpio.write(LED, gpio.HIGH)
+pwm.setup(RED, 1000, 0)
+pwm.setup(GREEN, 1000, 0)
+pwm.setup(BLUE, 1000, 0)
+
+--gpio.mode(LED_RED, gpio.OUTPUT)
+--gpio.write(LED_RED, gpio.HIGH)
+--gpio.mode(LED_GREEN, gpio.OUTPUT)
+--gpio.write(LED_GREEN, gpio.HIGH)
 
 mac = wifi.sta.getmac()
 ip = wifi.sta.getip()
@@ -22,39 +25,26 @@ m:on("offline", function(con)
     end)
 end)
 
--- Toggle switch when button change state
-debounced = 0
-gpio.trig(BTN, "down", function (level)
-    if (debounced == 0) then
-        debounced = 1
-        tmr.alarm(6, debounced, 0, function() debounced = 0; end)      
-        if (gpio.read(RELAY) == 1) then
-            gpio.write(RELAY, gpio.LOW)
-            print("Relay was on, turning it off")
-        else
-            gpio.write(RELAY, gpio.HIGH)
-            print("Relay was off, turning it on")
-        end
-        mqtt_activity()
-        mqtt_state()
-    end
-end)
-
 -- Toggle relay when message received from MQTT broker
 m:on("message", function(conn, topic, data)
     mqtt_activity()
     print("Message received: " .. topic .. " : " .. data)
-    parse = cjson.decode(data)
+    parse = sjson.decode(data)
     mac = parse.mac
     action = parse.action
+    print('MAC : '.. wifi.sta.getmac())
     if(mac == wifi.sta.getmac()) then
         if (action == "ON") then
-            print("Relay enable")
-            gpio.write(RELAY, gpio.HIGH)
+            print("RGB on")
+            setRed(1023)
+            setGreen(1023)
+            setBlue(1023)
             mqtt_state()
         elseif (action == "OFF") then
-            print("Relay disable")
-            gpio.write(RELAY, gpio.LOW)
+            print("RGB off")
+            setRed(0)
+            setGreen(0)
+            setBlue(0)
             mqtt_state()
         elseif (action == "STATE") then
             mqtt_state()
@@ -80,7 +70,7 @@ end)
 print("Connecting to "..BROKER_IP..":"..BROKER_PORT.."...")
 m:connect(BROKER_IP, BROKER_PORT, 0, 1, function(conn)
     print("Connected to "..BROKER_IP..":"..BROKER_PORT.." as "..CLIENT_ID)
-    gpio.write(LED, gpio.HIGH)
+    --gpio.write(LED, gpio.HIGH)
     mqtt_online()
     mqtt_subscribe()
 end)
