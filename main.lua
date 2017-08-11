@@ -5,10 +5,10 @@ pwm.setup(RED, 1000, 0)
 pwm.setup(GREEN, 1000, 0)
 pwm.setup(BLUE, 1000, 0)
 
---gpio.mode(LED_RED, gpio.OUTPUT)
---gpio.write(LED_RED, gpio.HIGH)
---gpio.mode(LED_GREEN, gpio.OUTPUT)
---gpio.write(LED_GREEN, gpio.HIGH)
+gpio.mode(LED_RED, gpio.OUTPUT)
+gpio.mode(LED_GREEN, gpio.OUTPUT)
+gpio.write(LED_RED, gpio.LOW)
+gpio.write(LED_GREEN, gpio.LOW)
 
 mac = wifi.sta.getmac()
 ip = wifi.sta.getip()
@@ -25,26 +25,36 @@ m:on("offline", function(con)
     end)
 end)
 
--- Toggle relay when message received from MQTT broker
 m:on("message", function(conn, topic, data)
-    mqtt_activity()
     print("Message received: " .. topic .. " : " .. data)
     parse = sjson.decode(data)
     mac = parse.mac
     action = parse.action
-    print('MAC : '.. wifi.sta.getmac())
-    if(mac == wifi.sta.getmac()) then
+    if (mac == wifi.sta.getmac()) then
         if (action == "ON") then
-            print("RGB on")
-            setRed(1023)
-            setGreen(1023)
-            setBlue(1023)
+            luminosity = parse.luminosity
+            if(luminosity ~= nil) then            
+                setColor(RED, 0)
+                setColor(GREEN, 0)
+                setColor(BLUE, 0)
+                color = parse.color
+                if (color == "RED") then
+                    setColor(RED, luminosity)
+                elseif (color == "GREEN") then
+                    setColor(GREEN, luminosity)
+                elseif (color == "BLUE") then
+                    setColor(BLUE, luminosity)
+                else
+                    print("Invalid color (" .. color .. ")")
+                end
+            else
+                print("Invalid luminosity (" .. luminosity ..")")
+            end
             mqtt_state()
         elseif (action == "OFF") then
-            print("RGB off")
-            setRed(0)
-            setGreen(0)
-            setBlue(0)
+            setColor(RED, 0)
+            setColor(GREEN, 0)
+            setColor(BLUE, 0)
             mqtt_state()
         elseif (action == "STATE") then
             mqtt_state()
@@ -70,7 +80,6 @@ end)
 print("Connecting to "..BROKER_IP..":"..BROKER_PORT.."...")
 m:connect(BROKER_IP, BROKER_PORT, 0, 1, function(conn)
     print("Connected to "..BROKER_IP..":"..BROKER_PORT.." as "..CLIENT_ID)
-    --gpio.write(LED, gpio.HIGH)
     mqtt_online()
     mqtt_subscribe()
 end)
